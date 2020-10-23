@@ -30,3 +30,5 @@ LOG_FILE_NAME = "friendo.log"
 =======
 LOG_FILE_PATH = Path(BASE_DIR, "logs")
 >>>>>>> develop
+
+API_COGS = ["events", "memes"]
