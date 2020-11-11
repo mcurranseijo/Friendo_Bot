@@ -8,6 +8,7 @@ import os
 import asyncio
 from setting import embed_color
 
+
 tokenID = ""
 
 class TriviaCog(commands.Cog,name='trivia'):
