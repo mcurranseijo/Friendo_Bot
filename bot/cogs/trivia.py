@@ -6,11 +6,10 @@ import urllib.request
 import random
 import os
 import asyncio
-from setting import embed_color
 
 tokenID = ""
 
-class TriviaCog(commands.Cog,name='trivia'):
+class TriviaCog(commands.Cog):
     """
     Commands for the Trivia Questions
     """
@@ -36,7 +35,8 @@ class TriviaCog(commands.Cog,name='trivia'):
 
         data = [6]
         data = url_request(quiz_var)
-        embed = discord.Embed(title="TRIVIA",color=embed_color)
+        print(data[7])
+        embed = discord.Embed(title="TRIVIA")
 
         embed.add_field(name="Category:", value=data[0], inline=True)
         embed.add_field(name="Difficulty", value=data[1], inline=True)
@@ -68,16 +68,16 @@ class TriviaCog(commands.Cog,name='trivia'):
             for f in entrants:
               names = names+(f"{f.name}, ")
               if f.id in self.scores:
+                print('updating score')
                 self.scores[f.id]+=10
                 save(self.scores)
               else:
+                print('adding score')
                 self.scores[f.id]=10
                 save(self.scores)
-            with open('scores.txt') as json_file:
-              self.scores = json.load(json_file)
-            message = await ctx.send(embed=discord.Embed(title=f"Congrats {names} got it right",description="use !score to check your score and !trivia stats to check the leaderboard!",color=embed_color))
+            message = await ctx.send(embed=discord.Embed(title=f"Congrats {names} got it right",description="use !score to check your score and !trivia stats to check the leaderboard!"))
         else:
-            message = await ctx.send(embed=discord.Embed(title="No one got the right answer",description=f"The correct answer was {data[7]}, react with ✅ to play again",color=embed_color))
+            message = await ctx.send(embed=discord.Embed(title="No one got the right answer",description=f"The correct answer was {data[7]}, react with ✅ to play again"))
         await message.add_reaction("✅")
         def check(reaction, user):
             return reaction.message.channel == ctx.channel and not user.bot
@@ -86,7 +86,7 @@ class TriviaCog(commands.Cog,name='trivia'):
           if reaction.emoji:
             await self.trivia(ctx)
         except asyncio.TimeoutError:
-            await ctx.send(embed=discord.Embed(title="No one wanted to play again",color=embed_color))
+            await ctx.send(embed=discord.Embed(title="No one wanted to play again"))
   
 
     #This command prints your scores
@@ -96,7 +96,7 @@ class TriviaCog(commands.Cog,name='trivia'):
     )
     async def score(self,ctx):
       auth_id = str(ctx.author.id)
-      embed = discord.Embed(title='Your Score',description=str(self.scores[auth_id])+' points',color=embed_color)
+      embed = discord.Embed(title='Your Score',description=str(self.scores[auth_id])+' points')
       await ctx.send(embed=embed)
 
     @commands.command(
@@ -104,37 +104,41 @@ class TriviaCog(commands.Cog,name='trivia'):
         brief="returns bot trivia leaderboard",
     )
     async def leaderboard(self,ctx):
-        leaderboard = {}
-        for f in self.scores:
-            user = await self.bot.fetch_user(int(f))
-            if user != "none":
-                leaderboard[user.display_name] = self.scores[f]
+      leaderboard = {}
+      for f in self.scores:
+          user = await self.bot.fetch_user(int(f))
+          if user != "none":
+            leaderboard[user.display_name] = self.scores[f]
           
 
-        sorted_leaderboard = sorted(
+      sorted_leaderboard = sorted(
             leaderboard.items(), key=lambda t: t[1], reverse=True
         )
       
-        leaders = ""
-        for count,staff in enumerate(sorted_leaderboard,1):
-            leaders += f"**{count}** {staff[0]} with {staff[1]} points\n"
-        embed = discord.Embed(title="Leaderboard",description=leaders,color=embed_color)
-        await ctx.send(embed=embed)
+      leaders = ""
+      for count,staff in enumerate(sorted_leaderboard,1):
+        leaders += f"**{count}** {staff[0]} with {staff[1]} points\n"
+      embed = discord.Embed(title="Leaderboard",description=leaders)
+      await ctx.send(embed=embed)
+      
+
 
 
 def url_request(value: int):
-    """Handles getting the json from the URL"""
+    """takes in a value for the category of the question and returns an array with the info for the question"""
     global tokenID
     url = (
-        type="&type=multiple&token="
-        f"https://opentdb.com/api.php?amount=1&category={str(value}{type}{tokenid}"
+        "https://opentdb.com/api.php?amount=1&category="
+        + str(value)
+        + "&type=multiple&token="
+        + tokenID
     )
 
     response = urllib.request.urlopen(url)
     data = json.load(response)
     responsecode = data["response_code"]
     if str(responsecode) == "4":
-        url2 = f"https://opentdb.com/api_token.php?command=reset&token={tokenid}"
+        url2 = "https://opentdb.com/api_token.php?command=reset&token=" + tokenID
 
     elif str(responsecode) == "3":
         url2 = "https://opentdb.com/api_token.php?command=request"
@@ -190,10 +194,9 @@ def url_request(value: int):
 
 
 def save(scores):
-    """Saves the user scores to the json file"""
-    with open('scores.txt', 'w') as outfile:
-        json.dump(scores, outfile)
-
+  """Saves the user scores to the json file"""
+  with open('scores.txt', 'w') as outfile:
+    json.dump(scores, outfile)
 
 def setup(bot):
     """Load the bot Cog"""
